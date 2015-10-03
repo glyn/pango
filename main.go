@@ -20,9 +20,13 @@ func main() {
 			Name:    "discover",
 			Aliases: []string{"d"},
 			Usage:   "discover Go modules",
-			Action:  disc.New().Discover,
+			Action:  discover,
 		},
 	}
 
 	app.Run(os.Args)
+}
+
+func discover(c *cli.Context) {
+	disc.New(c.Args().First(), c.Args().Get(1)).Discover()
 }
