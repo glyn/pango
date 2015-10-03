@@ -28,10 +28,16 @@ func New(scope, root string) *disc {
 }
 
 func (d *disc) Discover() {
-	d.traverse(d.root, make(map[string]bool, 1))
+	d.walk(d.root, func(p string, imp []string) {
+		fmt.Printf("Package %s imports: %v.\n", p, imp)
+	})
 }
 
-func (d *disc) traverse(p string, visited map[string]bool) {
+func (d *disc) walk(p string, visit func(string, []string)) {
+	d.traverse(p, make(map[string]bool, 1), visit)
+}
+
+func (d *disc) traverse(p string, visited map[string]bool, visit func(string, []string)) {
 	if visited[p] {
 		return
 	}
@@ -39,10 +45,10 @@ func (d *disc) traverse(p string, visited map[string]bool) {
 
 	imports := d.imports(p)
 	shortNames := d.shortNames(imports)
-	fmt.Printf("Package %s imports: %v.\n", d.shortName(p), shortNames)
+	visit(d.shortName(p), shortNames)
 	for _, imp := range imports {
 		if subpackage(imp, d.scope) {
-			d.traverse(imp, visited)
+			d.traverse(imp, visited, visit)
 		}
 	}
 }
