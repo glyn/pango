@@ -73,11 +73,22 @@ func discover(c *cli.Context) {
 		fmt.Printf("%s has fan-in %d and instability %.2f\n", p, fanIn[p], instability)
 	}
 
-	// Check stable dependencies principle violations
+	// Check stable dependencies principle violations.
 	for p, imp := range imports {
 		for _, q := range imp {
 			if instab[q] > instab[p] {
 				fmt.Printf("%s depends on %s but the former is more stable than the latter\n", p, q)
+			}
+		}
+	}
+
+	// Detect direct dependency cycles.
+	for p, imp := range imports {
+		for _, i := range imp {
+			for _, q := range imports[i] {
+				if q == p {
+					fmt.Printf("Direct dependency cycle between %s and %s\n", p, i)
+				}
 			}
 		}
 	}
