@@ -27,13 +27,16 @@ func New(scope, root string) *disc {
 	}
 }
 
-func (d *disc) Discover() {
-	d.walk(d.root, func(p string, imp []string) {
-		fmt.Printf("Package %s imports: %v.\n", p, imp)
+func (d *disc) Discover() map[string][]string {
+	imports := make(map[string][]string, 1)
+	d.Walk(d.root, func(p string, imp []string) {
+		imports[p] = imp
+		fmt.Printf("Package %s imports: %v.\n", d.ShortName(p), d.ShortNames(imp))
 	})
+	return imports
 }
 
-func (d *disc) walk(p string, visit func(string, []string)) {
+func (d *disc) Walk(p string, visit func(string, []string)) {
 	d.traverse(p, make(map[string]bool, 1), visit)
 }
 
@@ -44,8 +47,7 @@ func (d *disc) traverse(p string, visited map[string]bool, visit func(string, []
 	visited[p] = true
 
 	imports := d.imports(p)
-	shortNames := d.shortNames(imports)
-	visit(d.shortName(p), shortNames)
+	visit(p, imports)
 	for _, imp := range imports {
 		if subpackage(imp, d.scope) {
 			d.traverse(imp, visited, visit)
@@ -58,17 +60,17 @@ func subpackage(p, q string) bool {
 	return strings.HasPrefix(p, q)
 }
 
-func (d *disc) shortName(p string) string {
+func (d *disc) ShortName(p string) string {
 	if !subpackage(p, d.scope) {
 		panic("failed")
 	}
-	return p[len(d.scope)+1:]
+	return p[len(d.scope):]
 }
 
-func (d *disc) shortNames(p []string) []string {
+func (d *disc) ShortNames(p []string) []string {
 	result := []string{}
 	for _, q := range p {
-		s := d.shortName(q)
+		s := d.ShortName(q)
 		result = append(result, s)
 	}
 	return result
