@@ -1,2 +1,2 @@
-# gomod
-Go module discovery and analysis
+# sago
+Static Analysis for Go modules

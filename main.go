@@ -7,15 +7,15 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/glyn/gomod/disc"
+	"github.com/glyn/sago/disc"
 )
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "gomod"
-	app.Usage = "discover and analyse Go modules"
+	app.Name = "sago"
+	app.Usage = "Static Analysis for Go modules"
 	app.Action = func(c *cli.Context) {
-		println("Try gomod help")
+		println("Try sago help")
 	}
 
 	app.Commands = []cli.Command{
