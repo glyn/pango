@@ -13,27 +13,50 @@ import (
 )
 
 type disc struct {
-	scope, root string
-	fset        *token.FileSet
-	gopath      string
+	scope  string
+	fset   *token.FileSet
+	gopath string
 }
 
-func New(scope, root string) *disc {
+func New(scope string) *disc {
 	return &disc{
 		scope:  scope,
-		root:   root,
 		fset:   token.NewFileSet(),
 		gopath: os.Getenv("GOPATH"),
 	}
 }
 
-func (d *disc) Discover() map[string][]string {
+func (d *disc) Discover(root string) map[string][]string {
 	imports := make(map[string][]string, 1)
-	d.Walk(d.root, func(p string, imp []string) {
+	d.Walk(root, func(p string, imp []string) {
 		imports[p] = imp
 		fmt.Printf("Package %s imports: %v.\n", d.ShortName(p), d.ShortNames(imp))
 	})
 	return imports
+}
+
+func (d *disc) DiscoverAll() map[string][]string {
+	allImports := make(map[string][]string, 1)
+	scopeDir := d.pkgDir(d.scope)
+	filepath.Walk(scopeDir, func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			return err
+		}
+		if strings.HasSuffix(path, ".git") {
+			return filepath.SkipDir
+		}
+		pkg := d.dirPkg(path)
+		if _, ok := allImports[pkg]; !ok {
+			i := d.Discover(pkg)
+			for p, imp := range i {
+				if _, ok := allImports[p]; !ok {
+					allImports[p] = imp
+				}
+			}
+		}
+		return err
+	})
+	return allImports
 }
 
 func (d *disc) Walk(p string, visit func(string, []string)) {
@@ -62,7 +85,7 @@ func subpackage(p, q string) bool {
 
 func (d *disc) ShortName(p string) string {
 	if !subpackage(p, d.scope) {
-		panic("failed")
+		panic(fmt.Sprintf("No shortname for %s in scope %s %v", p, d.scope, subpackage(d.scope, p)))
 	}
 	return p[len(d.scope):]
 }
@@ -78,7 +101,7 @@ func (d *disc) ShortNames(p []string) []string {
 
 func (d *disc) imports(pkg string) []string {
 	i := make(map[string]bool, 1)
-	pkgDir := filepath.Join(d.gopath, "src", pkg)
+	pkgDir := d.pkgDir(pkg)
 	pAsts, err := parser.ParseDir(d.fset, pkgDir, nil, parser.ImportsOnly)
 	if err != nil {
 		panic(err)
@@ -98,4 +121,16 @@ func (d *disc) imports(pkg string) []string {
 		result = append(result, p)
 	}
 	return result
+}
+
+func (d *disc) pkgDir(p string) string {
+	return filepath.Join(d.gopath, "src", p)
+}
+
+func (d *disc) dirPkg(dir string) string {
+	src := filepath.Join(d.gopath, "src")
+	if !strings.HasPrefix(dir, src) {
+		panic(dir)
+	}
+	return dir[len(src)+1:]
 }

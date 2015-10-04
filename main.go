@@ -31,8 +31,15 @@ func main() {
 }
 
 func discover(c *cli.Context) {
-	d := disc.New(c.Args().First(), c.Args().Get(1))
-	imports := d.Discover()
+	d := disc.New(c.Args().Get(0))
+
+	root := c.Args().Get(1)
+	var imports map[string][]string
+	if root != "" {
+		imports = d.Discover(root)
+	} else {
+		imports = d.DiscoverAll()
+	}
 
 	// Analyse self-contained packages.
 	for p, _ := range imports {
