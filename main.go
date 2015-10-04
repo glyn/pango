@@ -52,9 +52,7 @@ func discover(c *cli.Context) {
 	// Compute scoped fan-out of each package.
 	fanOut := make(map[string]int, 1)
 	for p, imp := range imports {
-		fo := len(imp)
-		fanOut[p] = fo
-		fmt.Printf("%s has fan-out %d\n", p, fo)
+		fanOut[p] = len(imp)
 	}
 
 	// Compute scoped fan-in of each package.
@@ -68,16 +66,15 @@ func discover(c *cli.Context) {
 	// Compute scoped instability of each package.
 	instab := make(map[string]float32, 1)
 	for p, _ := range imports {
-		instability := float32(fanOut[p]) / float32((fanIn[p] + fanOut[p]))
-		instab[p] = instability
-		fmt.Printf("%s has fan-in %d and instability %.2f\n", p, fanIn[p], instability)
+		instab[p] = instability(fanIn[p], fanOut[p])
+		fmt.Printf("%s has fan-in %d, fan-out %d, and instability %.2f\n", d.ShortName(p), fanIn[p], fanOut[p], instab[p])
 	}
 
 	// Check stable dependencies principle violations.
 	for p, imp := range imports {
 		for _, q := range imp {
 			if instab[q] > instab[p] {
-				fmt.Printf("%s depends on %s but the former is more stable than the latter\n", p, q)
+				fmt.Printf("%s depends on the less stable %s\n", d.ShortName(p), d.ShortName(q))
 			}
 		}
 	}
@@ -87,9 +84,16 @@ func discover(c *cli.Context) {
 		for _, i := range imp {
 			for _, q := range imports[i] {
 				if q == p {
-					fmt.Printf("Direct dependency cycle between %s and %s\n", p, i)
+					fmt.Printf("Direct dependency cycle between %s and %s\n", d.ShortName(p), d.ShortName(i))
 				}
 			}
 		}
 	}
+}
+
+func instability(fanIn, fanOut int) float32 {
+	if fan := fanIn + fanOut; fan > 0 {
+		return float32(fanOut) / float32(fan)
+	}
+	return 0
 }
