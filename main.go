@@ -7,30 +7,30 @@ import (
 	"strings"
 
 	"github.com/codegangsta/cli"
-	"github.com/glyn/sago/disc"
+	"github.com/glyn/mango/disc"
 )
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "sago"
-	app.Usage = "Static Analysis for Go modules"
+	app.Name = "mango"
+	app.Usage = "Module Analysis for Go"
 	app.Action = func(c *cli.Context) {
-		println("Try sago help")
+		println("Try mango help")
 	}
 
 	app.Commands = []cli.Command{
 		{
-			Name:    "discover",
-			Aliases: []string{"d"},
-			Usage:   "discover Go modules",
-			Action:  discover,
+			Name:    "analyse",
+			Aliases: []string{"a"},
+			Usage:   "analyse Go modules",
+			Action:  analyse,
 		},
 	}
 
 	app.Run(os.Args)
 }
 
-func discover(c *cli.Context) {
+func analyse(c *cli.Context) {
 	d := disc.New(c.Args().Get(0))
 
 	root := c.Args().Get(1)
