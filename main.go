@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"strings"
-
 	"github.com/codegangsta/cli"
 	"github.com/glyn/mango/disc"
+	"github.com/glyn/mango/pkg"
 )
 
 func main() {
@@ -33,8 +32,8 @@ func main() {
 func analyse(c *cli.Context) {
 	d := disc.New(c.Args().Get(0))
 
-	root := c.Args().Get(1)
-	var imports map[string][]string
+	root := pkg.Pkg(c.Args().Get(1))
+	var imports pkg.PGraph
 	if root != "" {
 		imports = d.Discover(root)
 	} else {
@@ -42,60 +41,60 @@ func analyse(c *cli.Context) {
 	}
 
 	// Analyse self-contained packages.
-	for p, _ := range imports {
+	imports.Packages().Walk(func(p pkg.Pkg) {
 		escape := false
-		d.Walk(p, func(q string, qi []string) {
-			for _, i := range qi {
-				if !strings.HasPrefix(i, p) {
+		d.Walk(p, func(q pkg.Pkg, qi pkg.PSet) {
+			qi.Walk(func(i pkg.Pkg) {
+				if !p.HasSubpackage(i) {
 					escape = true
 				}
-			}
+			})
 		})
 		if !escape {
 			fmt.Printf("%s is self-contained\n", d.ShortName(p))
 		}
-	}
+	})
 
 	// Compute scoped fan-out of each package.
-	fanOut := make(map[string]int, 1)
-	for p, imp := range imports {
-		fanOut[p] = len(imp)
-	}
+	fanOut := make(map[pkg.Pkg]int, 1)
+	imports.Walk(func(p pkg.Pkg, i pkg.PSet) {
+		fanOut[p] = i.Size()
+	})
 
 	// Compute scoped fan-in of each package.
-	fanIn := make(map[string]int, 1)
-	for _, imp := range imports {
-		for _, i := range imp {
-			fanIn[i] = fanIn[i] + 1
-		}
-	}
+	fanIn := make(map[pkg.Pkg]int, 1)
+	imports.Walk(func(_ pkg.Pkg, i pkg.PSet) {
+		i.Walk(func(q pkg.Pkg) {
+			fanIn[q] = fanIn[q] + 1
+		})
+	})
 
 	// Compute scoped instability of each package.
-	instab := make(map[string]float32, 1)
-	for p, _ := range imports {
+	instab := make(map[pkg.Pkg]float32, 1)
+	imports.Walk(func(p pkg.Pkg, i pkg.PSet) {
 		instab[p] = instability(fanIn[p], fanOut[p])
 		fmt.Printf("%s has fan-in %d, fan-out %d, and instability %.2f\n", d.ShortName(p), fanIn[p], fanOut[p], instab[p])
-	}
+	})
 
 	// Check stable dependencies principle violations.
-	for p, imp := range imports {
-		for _, q := range imp {
+	imports.Walk(func(p pkg.Pkg, i pkg.PSet) {
+		i.Walk(func(q pkg.Pkg) {
 			if instab[q] > instab[p] {
 				fmt.Printf("%s depends on the less stable %s\n", d.ShortName(p), d.ShortName(q))
 			}
-		}
-	}
+		})
+	})
 
 	// Detect direct dependency cycles.
-	for p, imp := range imports {
-		for _, i := range imp {
-			for _, q := range imports[i] {
-				if q == p {
+	imports.Walk(func(p pkg.Pkg, imp pkg.PSet) {
+		imp.Walk(func(i pkg.Pkg) {
+			if q, ok := imports.Imports(i); ok {
+				if q.Contains(p) {
 					fmt.Printf("Direct dependency cycle between %s and %s\n", d.ShortName(p), d.ShortName(i))
 				}
 			}
-		}
-	}
+		})
+	})
 }
 
 func instability(fanIn, fanOut int) float32 {
