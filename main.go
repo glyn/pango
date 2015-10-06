@@ -5,23 +5,23 @@ import (
 	"os"
 
 	"github.com/codegangsta/cli"
-	"github.com/glyn/mango/disc"
-	"github.com/glyn/mango/pkg"
+	"github.com/glyn/pango/disc"
+	"github.com/glyn/pango/pkg"
 )
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "mango"
-	app.Usage = "Module Analysis for Go"
+	app.Name = "pango"
+	app.Usage = "Package Analysis for Go"
 	app.Action = func(c *cli.Context) {
-		println("Try mango help")
+		println("Try pango help")
 	}
 
 	app.Commands = []cli.Command{
 		{
 			Name:    "analyse",
 			Aliases: []string{"a"},
-			Usage:   "analyse Go modules",
+			Usage:   "analyse Go package",
 			Action:  analyse,
 		},
 	}

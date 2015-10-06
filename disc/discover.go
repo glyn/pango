@@ -5,7 +5,7 @@ import (
 	"go/parser"
 	"path/filepath"
 
-	"github.com/glyn/mango/pkg"
+	"github.com/glyn/pango/pkg"
 
 	"os"
 
