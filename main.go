@@ -21,7 +21,7 @@ func main() {
 		{
 			Name:    "analyse",
 			Aliases: []string{"a"},
-			Usage:   "analyse Go package",
+			Usage:   "Analyses a Go package and its dependencies",
 			Action:  analyse,
 		},
 	}
