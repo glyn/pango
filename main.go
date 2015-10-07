@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/codegangsta/cli"
-	"github.com/glyn/pango/disc"
-	. "github.com/glyn/pango/pkg"
+	. "github.com/glyn/pango/packages"
+	"github.com/glyn/pango/parse"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 }
 
 func analyse(c *cli.Context) {
-	d := disc.New(c.Args().Get(0))
+	d := parse.New(c.Args().Get(0))
 
 	root := Pkg(c.Args().Get(1))
 	var imports PGraph

@@ -1,17 +1,14 @@
-package disc
+package parse
 
 import (
 	"fmt"
 	"go/parser"
-	"path/filepath"
-
-	. "github.com/glyn/pango/pkg"
-
-	"os"
-
 	"go/token"
-
+	"os"
+	"path/filepath"
 	"strings"
+
+	. "github.com/glyn/pango/packages"
 )
 
 type disc struct {
