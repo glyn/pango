@@ -6,11 +6,12 @@ func NewPGraph() PGraph {
 	return make(PGraph, 1)
 }
 
-func (g PGraph) AddImports(p Pkg, extra PSet) {
+func (g PGraph) AddImports(p Pkg, extra PSet) PGraph {
 	if _, ok := g[p]; !ok {
 		g[p] = NewPSet()
 	}
 	g[p].AddAll(extra)
+	return g
 }
 
 func (g PGraph) Imports(p Pkg) (PSet, bool) {

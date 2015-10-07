@@ -30,15 +30,19 @@ func main() {
 }
 
 func analyse(c *cli.Context) {
-	d := parse.New(c.Args().Get(0))
+	d := parse.New(c.Args().Get(0), os.Getenv("GOPATH"))
 
 	root := Pkg(c.Args().Get(1))
 	var imports PGraph
 	if root != "" {
-		imports = d.Discover(root)
+		imports = d.Parse(root)
 	} else {
-		imports = d.DiscoverAll()
+		imports = d.ParseAll()
 	}
+
+	imports.Walk(func(p Pkg, i PSet) {
+		fmt.Printf("Package %s imports: %v.\n", d.ShortName(p), d.ShortNames(i))
+	})
 
 	// Analyse self-contained packages.
 	imports.Packages().Walk(func(p Pkg) {

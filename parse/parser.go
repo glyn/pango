@@ -11,32 +11,31 @@ import (
 	. "github.com/glyn/pango/packages"
 )
 
-type disc struct {
+type parseContext struct {
 	scope  Pkg
 	fset   *token.FileSet
 	gopath string
 }
 
-func New(scope string) *disc {
-	return &disc{
+func New(scope, gopath string) *parseContext {
+	return &parseContext{
 		scope:  Pkg(scope),
 		fset:   token.NewFileSet(),
-		gopath: os.Getenv("GOPATH"),
+		gopath: gopath,
 	}
 }
 
-func (d *disc) Discover(root Pkg) PGraph {
+func (pc *parseContext) Parse(root Pkg) PGraph {
 	imports := NewPGraph()
-	d.Walk(root, func(p Pkg, imp PSet) {
+	pc.Walk(root, func(p Pkg, imp PSet) {
 		imports.AddImports(p, imp)
-		fmt.Printf("Package %s imports: %v.\n", d.ShortName(p), d.ShortNames(imp))
 	})
 	return imports
 }
 
-func (d *disc) DiscoverAll() PGraph {
+func (pc *parseContext) ParseAll() PGraph {
 	allImports := make(PGraph, 1)
-	scopeDir := d.pkgDir(d.scope)
+	scopeDir := pc.pkgDir(pc.scope)
 	filepath.Walk(scopeDir, func(pathString string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
 			return err
@@ -44,9 +43,9 @@ func (d *disc) DiscoverAll() PGraph {
 		if strings.HasSuffix(pathString, ".git") {
 			return filepath.SkipDir
 		}
-		pkg := d.dirPkg(pathString)
+		pkg := pc.dirPkg(pathString)
 		if _, ok := allImports.Imports(pkg); !ok {
-			i := d.Discover(pkg)
+			i := pc.Parse(pkg)
 			for p, imp := range i {
 				if _, ok := allImports[p]; !ok {
 					allImports[p] = imp
@@ -58,45 +57,45 @@ func (d *disc) DiscoverAll() PGraph {
 	return allImports
 }
 
-func (d *disc) Walk(p Pkg, visit func(Pkg, PSet)) {
-	d.traverse(p, NewPSet(), visit)
+func (pc *parseContext) Walk(p Pkg, visit func(Pkg, PSet)) {
+	pc.traverse(p, NewPSet(), visit)
 }
 
-func (d *disc) traverse(p Pkg, visited PSet, visit func(Pkg, PSet)) {
+func (pc *parseContext) traverse(p Pkg, visited PSet, visit func(Pkg, PSet)) {
 	if visited.Contains(p) {
 		return
 	}
 	visited.Add(p)
 
-	imports := d.imports(p)
+	imports := pc.imports(p)
 	visit(p, imports)
 	imports.Walk(func(imp Pkg) {
-		if d.scope.HasSubpackage(imp) {
-			d.traverse(imp, visited, visit)
+		if pc.scope.HasSubpackage(imp) {
+			pc.traverse(imp, visited, visit)
 		}
 	})
 }
 
-func (d *disc) ShortName(p Pkg) string {
-	if !d.scope.HasSubpackage(p) {
-		panic(fmt.Sprintf("No shortname for %s in scope %s %v", p, d.scope, d.scope.HasSubpackage(p)))
+func (pc *parseContext) ShortName(p Pkg) string {
+	if !pc.scope.HasSubpackage(p) {
+		panic(fmt.Sprintf("No shortname for %s in scope %s %v", p, pc.scope, pc.scope.HasSubpackage(p)))
 	}
-	return string(p[len(d.scope):])
+	return string(p[len(pc.scope):])
 }
 
-func (d *disc) ShortNames(p PSet) []string {
+func (pc *parseContext) ShortNames(p PSet) []string {
 	result := []string{}
 	p.Walk(func(q Pkg) {
-		s := d.ShortName(q)
+		s := pc.ShortName(q)
 		result = append(result, s)
 	})
 	return result
 }
 
-func (d *disc) imports(p Pkg) PSet {
+func (pc *parseContext) imports(p Pkg) PSet {
 	i := NewPSet()
-	pkgDir := d.pkgDir(p)
-	pAsts, err := parser.ParseDir(d.fset, pkgDir, nil, parser.ImportsOnly)
+	pkgDir := pc.pkgDir(p)
+	pAsts, err := parser.ParseDir(pc.fset, pkgDir, nil, parser.ImportsOnly)
 	if err != nil {
 		panic(err)
 	}
@@ -104,7 +103,7 @@ func (d *disc) imports(p Pkg) PSet {
 		for _, f := range ast.Files {
 			for _, is := range f.Imports {
 				q := Pkg(strings.Trim(is.Path.Value, `"`))
-				if q != p && d.scope.HasSubpackage(q) {
+				if q != p && pc.scope.HasSubpackage(q) {
 					i.Add(q)
 				}
 			}
@@ -113,12 +112,12 @@ func (d *disc) imports(p Pkg) PSet {
 	return i
 }
 
-func (d *disc) pkgDir(p Pkg) string {
-	return filepath.Join(d.gopath, "src", string(p))
+func (pc *parseContext) pkgDir(p Pkg) string {
+	return filepath.Join(pc.gopath, "src", string(p))
 }
 
-func (d *disc) dirPkg(dir string) Pkg {
-	src := filepath.Join(d.gopath, "src")
+func (pc *parseContext) dirPkg(dir string) Pkg {
+	src := filepath.Join(pc.gopath, "src")
 	if !strings.HasPrefix(dir, src) {
 		panic(dir)
 	}
