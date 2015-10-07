@@ -12,6 +12,7 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "pango"
+	app.HelpName = "pango"
 	app.Usage = "Package Analysis for Go"
 	app.Action = func(c *cli.Context) {
 		println("Try pango help")
@@ -19,10 +20,13 @@ func main() {
 
 	app.Commands = []cli.Command{
 		{
-			Name:    "analyse",
-			Aliases: []string{"a"},
-			Usage:   "Analyses a Go package and its dependencies",
-			Action:  analyse,
+			Name:      "analyse",
+			Aliases:   []string{"a"},
+			Usage:     "Analyses a Go package and its dependencies",
+			Action:    analyse,
+			ArgsUsage: "<package>",
+			Description: "Analyses the specified package and its subdirectories. Example:\n\n" +
+				"       pango analyse github.com/pango/parse",
 		},
 	}
 

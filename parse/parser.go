@@ -1,7 +1,6 @@
 package parse
 
 import (
-	"fmt"
 	"go/parser"
 	"go/token"
 	"os"
@@ -34,7 +33,7 @@ func (pc *parseContext) Parse(root Pkg) PGraph {
 }
 
 func (pc *parseContext) ParseAll() PGraph {
-	allImports := make(PGraph, 1)
+	allImports := NewPGraph()
 	scopeDir := pc.pkgDir(pc.scope)
 	filepath.Walk(scopeDir, func(pathString string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
@@ -78,9 +77,9 @@ func (pc *parseContext) traverse(p Pkg, visited PSet, visit func(Pkg, PSet)) {
 
 func (pc *parseContext) ShortName(p Pkg) string {
 	if !pc.scope.HasSubpackage(p) {
-		panic(fmt.Sprintf("No shortname for %s in scope %s %v", p, pc.scope, pc.scope.HasSubpackage(p)))
+		return string(p)
 	}
-	return string(p[len(pc.scope):])
+	return "." + string(p[len(pc.scope):])
 }
 
 func (pc *parseContext) ShortNames(p PSet) []string {
@@ -103,7 +102,7 @@ func (pc *parseContext) imports(p Pkg) PSet {
 		for _, f := range ast.Files {
 			for _, is := range f.Imports {
 				q := Pkg(strings.Trim(is.Path.Value, `"`))
-				if q != p && pc.scope.HasSubpackage(q) {
+				if q != p && Pkg("github.com").HasSubpackage(q) {
 					i.Add(q)
 				}
 			}
