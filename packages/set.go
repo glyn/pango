@@ -30,14 +30,6 @@ func (s PSet) Contains(p Pkg) bool {
 	return ok
 }
 
-func (s PSet) Packages() []Pkg {
-	pkgs := []Pkg{}
-	for p, _ := range s {
-		pkgs = append(pkgs, p)
-	}
-	return pkgs
-}
-
 func (s PSet) Size() int {
 	return len(s)
 }

@@ -34,7 +34,7 @@ func main() {
 }
 
 func analyse(c *cli.Context) {
-	pc := parse.New(c.Args().Get(0), os.Getenv("GOPATH"))
+	pc := parse.New(c.Args().Get(0), os.Getenv("GOPATH"), false) // TODO: add "include tests" flag
 
 	imports, err := pc.Parse()
 	if err != nil {

@@ -17,7 +17,8 @@ func TestParseOk(t *testing.T) {
 		t.Fatal(err)
 	}
 	par := parse.New("github.com/cloudfoundry-incubator/guardian",
-		filepath.Join(pwd, "../fixtures/guardian"))
+		filepath.Join(pwd, "../fixtures/guardian"),
+		true)
 	graph, err := par.Parse()
 	if err != nil {
 		t.Fail()
@@ -48,7 +49,8 @@ func TestParseBadPackage(t *testing.T) {
 		t.Fatal(err)
 	}
 	par := parse.New("github.com/cloudfoundry-incubator/grauniad",
-		filepath.Join(pwd, "../fixtures/guardian"))
+		filepath.Join(pwd, "../fixtures/guardian"),
+		true)
 	_, err = par.Parse()
 	expectedErrPrefix := "lstat "
 	expectedErrSuffix := "github.com/cloudfoundry-incubator/grauniad: no such file or directory"

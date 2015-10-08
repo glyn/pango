@@ -11,16 +11,18 @@ import (
 )
 
 type parseContext struct {
-	scope  Pkg
-	fset   *token.FileSet
-	gopath string
+	scope        Pkg
+	fset         *token.FileSet
+	gopath       string
+	includeTests bool
 }
 
-func New(scope, gopath string) *parseContext {
+func New(scope, gopath string, includeTests bool) *parseContext {
 	return &parseContext{
-		scope:  Pkg(scope),
-		fset:   token.NewFileSet(),
-		gopath: gopath,
+		scope:        Pkg(scope),
+		fset:         token.NewFileSet(),
+		gopath:       gopath,
+		includeTests: includeTests,
 	}
 }
 
@@ -100,7 +102,9 @@ func (pc *parseContext) ShortNames(p PSet) []string {
 func (pc *parseContext) imports(p Pkg) PSet {
 	i := NewPSet()
 	pkgDir := pc.pkgDir(p)
-	pAsts, err := parser.ParseDir(pc.fset, pkgDir, nil, parser.ImportsOnly)
+	pAsts, err := parser.ParseDir(pc.fset, pkgDir, func(fi os.FileInfo) bool {
+		return pc.includeTests || !strings.HasSuffix(fi.Name(), "_test.go")
+	}, parser.ImportsOnly)
 	if err != nil {
 		panic(err)
 	}
