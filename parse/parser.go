@@ -24,10 +24,13 @@ func New(scope, gopath string) *parseContext {
 	}
 }
 
-func (pc *parseContext) Parse() PGraph {
+func (pc *parseContext) Parse() (PGraph, error) {
 	allImports := NewPGraph()
 	scopeDir := pc.pkgDir(pc.scope)
-	filepath.Walk(scopeDir, func(pathString string, info os.FileInfo, err error) error {
+	err := filepath.Walk(scopeDir, func(pathString string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if !info.IsDir() {
 			return err
 		}
@@ -45,7 +48,10 @@ func (pc *parseContext) Parse() PGraph {
 		}
 		return err
 	})
-	return allImports
+	if err != nil {
+		return nil, err
+	}
+	return allImports, nil
 }
 
 func (pc *parseContext) parse(root Pkg) PGraph {

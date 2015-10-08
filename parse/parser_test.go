@@ -5,18 +5,23 @@ import (
 	"path/filepath"
 	"testing"
 
+	"strings"
+
 	. "github.com/glyn/pango/packages"
 	"github.com/glyn/pango/parse"
 )
 
-func TestParseAll(t *testing.T) {
+func TestParseOk(t *testing.T) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
 	}
 	par := parse.New("github.com/cloudfoundry-incubator/guardian",
 		filepath.Join(pwd, "../fixtures/guardian"))
-	graph := par.Parse()
+	graph, err := par.Parse()
+	if err != nil {
+		t.Fail()
+	}
 
 	// Check the packages are correct.
 	s := graph.Packages()
@@ -35,6 +40,23 @@ func TestParseAll(t *testing.T) {
 			t.Errorf("The imports of %s were %v rather than the expected %v", p, j, i)
 		}
 	})
+}
+
+func TestParseBadPackage(t *testing.T) {
+	pwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	par := parse.New("github.com/cloudfoundry-incubator/grauniad",
+		filepath.Join(pwd, "../fixtures/guardian"))
+	_, err = par.Parse()
+	expectedErrPrefix := "lstat "
+	expectedErrSuffix := "github.com/cloudfoundry-incubator/grauniad: no such file or directory"
+	actualErrString := err.Error()
+	if !strings.HasPrefix(actualErrString, expectedErrPrefix) ||
+		!strings.HasSuffix(actualErrString, expectedErrSuffix) {
+		t.Errorf("Expected error %s...%s but got %s", expectedErrPrefix, expectedErrSuffix, err)
+	}
 }
 
 var guardianPackages PSet = NewPSet("github.com/cloudfoundry-incubator/guardian/cmd/guardian",
