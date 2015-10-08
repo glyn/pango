@@ -16,7 +16,7 @@ func TestParseAll(t *testing.T) {
 	}
 	par := parse.New("github.com/cloudfoundry-incubator/guardian",
 		filepath.Join(pwd, "../fixtures/guardian"))
-	graph := par.ParseAll()
+	graph := par.Parse()
 
 	// Check the packages are correct.
 	s := graph.Packages()

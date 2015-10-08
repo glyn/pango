@@ -24,15 +24,7 @@ func New(scope, gopath string) *parseContext {
 	}
 }
 
-func (pc *parseContext) Parse(root Pkg) PGraph {
-	imports := NewPGraph()
-	pc.Walk(root, func(p Pkg, imp PSet) {
-		imports.AddImports(p, imp)
-	})
-	return imports
-}
-
-func (pc *parseContext) ParseAll() PGraph {
+func (pc *parseContext) Parse() PGraph {
 	allImports := NewPGraph()
 	scopeDir := pc.pkgDir(pc.scope)
 	filepath.Walk(scopeDir, func(pathString string, info os.FileInfo, err error) error {
@@ -44,7 +36,7 @@ func (pc *parseContext) ParseAll() PGraph {
 		}
 		pkg := pc.dirPkg(pathString)
 		if _, ok := allImports.Imports(pkg); !ok {
-			i := pc.Parse(pkg)
+			i := pc.parse(pkg)
 			for p, imp := range i {
 				if _, ok := allImports[p]; !ok {
 					allImports[p] = imp
@@ -54,6 +46,14 @@ func (pc *parseContext) ParseAll() PGraph {
 		return err
 	})
 	return allImports
+}
+
+func (pc *parseContext) parse(root Pkg) PGraph {
+	imports := NewPGraph()
+	pc.Walk(root, func(p Pkg, imp PSet) {
+		imports.AddImports(p, imp)
+	})
+	return imports
 }
 
 func (pc *parseContext) Walk(p Pkg, visit func(Pkg, PSet)) {
